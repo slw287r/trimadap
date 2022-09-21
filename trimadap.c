@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <unistd.h>
@@ -13,7 +14,7 @@
 KSEQ_INIT(gzFile, gzread)
 
 #define MAXBQ 64
-#define VERSION "r15"
+#define VERSION "r16"
 #define abs(x) ((x)>0?(x):-(x))
 #define max(x,y) ((x)>(y)?(x):(y))
 #define min(x,y) ((x)>(y)?(y):(x))
@@ -78,7 +79,7 @@ typedef struct {
 typedef struct {
 	int sa, sb, go, ge; // scoring; not exposed to the command line, for now
 	int min_sc, min_len, min_trim_len, min_rlen;
-	unsigned sl; // selected length to output
+	unsigned kn, sl; // selected length to output
 	char mskr, qc;
 	int n_threads;
 	int chunk_size;
@@ -327,6 +328,15 @@ static void worker_for(void *_data, long i, int tid)
 	ta_trim1(data->opt, data->seqs[i].seq);
 }
 
+static unsigned strn(const char *a)
+{
+	unsigned n = 0;
+	const char *p = a;
+	while (*p)
+		n += (bool)(*p++ == 'N');
+	return n;
+}
+
 static void *worker_pipeline(void *shared, int step, void *_data)
 {
 	int i;
@@ -348,9 +358,11 @@ static void *worker_pipeline(void *shared, int step, void *_data)
 			bseq1_t *s = &data->seqs[i];
 			// filter out reads shorter than threshold specified
 			if (s->l_seq - trim_len(s->l_seq, s->seq, opt->mskr) < opt->min_rlen)
-				continue;
+				goto next;
 			if (opt->min_trim_len < s->l_seq)
 				apply_trim(opt->min_trim_len, s->l_seq, s->seq, s->qual, opt->mskr);
+			if (opt->kn && strn(s->seq) >= opt->kn)
+				goto next;
 			putchar(s->qual? '@' : '>'); fputs(s->name, stdout);
 			if (s->comment) {
 				putchar(' ');
@@ -369,6 +381,7 @@ static void *worker_pipeline(void *shared, int step, void *_data)
 			}
 			// basic qc
 			if (opt->qc) do_qc(s, opt->qcstat);
+next:
 			free(s->seq); free(s->qual); free(s->name); free(s->comment);
 		}
 		free(data->seqs); free(data);
@@ -385,7 +398,7 @@ int main(int argc, char *argv[])
 	int c, i, j;
 	ta_opt_t opt;
 	ta_opt_init(&opt);
-	while ((c = getopt(argc, argv, "5:3:s:p:l:t:r:m:n:qvh")) >= 0) {
+	while ((c = getopt(argc, argv, "5:3:s:p:l:t:r:m:n:k:qvh")) >= 0) {
 		if (c == 'h') goto usage;
 		else if (c == '5' || c == '3') ta_opt_add_adap(&opt, c - '0', optarg);
 		else if (c == 's') opt.min_sc = atoi(optarg);
@@ -396,6 +409,7 @@ int main(int argc, char *argv[])
 		else if (c == 'r') opt.min_rlen = atoi(optarg);
 		else if (c == 'm') opt.mskr = *optarg;
 		else if (c == 'n') opt.sl = atoi(optarg);
+		else if (c == 'k') opt.kn = atoi(optarg);
 		else if (c == 'q') opt.qc = 1;
 		else if (c == 'v') {
 			puts(VERSION);
@@ -424,18 +438,21 @@ usage:
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  -5 STR     5'-end adapter\n");
 		fprintf(stderr, "  -3 STR     3'-end adapter\n");
-		fprintf(stderr, "  -l INT     min length [%d]\n", opt.min_len);
-		fprintf(stderr, "  -s INT     min score [%d]\n", opt.min_sc);
-		fprintf(stderr, "  -t INT     trim down masked part (Xs) [don't trim]\n");
-		fprintf(stderr, "  -d FLOAT   max difference [%.3f]\n", opt.max_diff);
-		fprintf(stderr, "  -r INT     min read length (w/o trimmed) to output [%d]\n", opt.min_rlen);
-		fprintf(stderr, "  -p INT     number of trimmer threads [%d]\n", opt.n_threads);
-		fprintf(stderr, "  -m CHAR    masker character (X or N) [%c]\n", opt.mskr);
-		fprintf(stderr, "  -n INT     first n bases to keep [all]\n");
-		fprintf(stderr, "  -q         perform basic qc of trimmed output [false]\n");
+		fprintf(stderr, "  -l INT     min length \033[2m[%d]\033[0m\n", opt.min_len);
+		fprintf(stderr, "  -s INT     min score \033[2m[%d]\033[0m\n", opt.min_sc);
+		fprintf(stderr, "  -t INT     trim down masked part (Xs) \033[2m[don't trim]\033[0m\n");
+		fprintf(stderr, "  -d FLOAT   max difference \033[2m[%.3f]\033[0m\n", opt.max_diff);
+		fprintf(stderr, "  -r INT     min read length (w/o trimmed) to output \033[2m[%d]\033[0m\n", opt.min_rlen);
+		fprintf(stderr, "  -p INT     number of trimmer threads \033[2m[%d]\033[0m\n", opt.n_threads);
+		fprintf(stderr, "  -m CHAR    masker character (X or N) \033[2m[%c]\033[0m\n", opt.mskr);
+		fprintf(stderr, "  -n INT     first n bases to keep \033[2m[all]\033[0m\n");
+		fprintf(stderr, "  -q         perform basic QC of trimmed reads \033[2m[false]\033[0m\n");
+		fprintf(stderr, "             QC info goes to stderr\n");
+		fprintf(stderr, "  -k INT     keep reads with <\033[3mk\033[0m non-adapter-Ns in output \033[2m[unlimited]\033[0m\n\n");
 		fprintf(stderr, "  -h         print help message\n");
 		fprintf(stderr, "  -v         print version number\n");
-		return 1; // FIXME: memory leak
+		fprintf(stderr, "NB: please redirect output fq (stdout) to file\n");
+		return 1;
 	}
 	ta_opt_open(&opt, optind < argc ? argv[optind] : 0);
 	kt_pipeline(2, worker_pipeline, &opt, 3);
