@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <inttypes.h>
 #include <sys/stat.h>
 #include "igzip_lib.h"
