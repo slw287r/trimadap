@@ -59,6 +59,7 @@ typedef gzFile_t* gzFile;
 extern "C" {
 #endif
 int is_gz(FILE* fp);
+int is_plain(FILE* fp);
 uint32_t get_posix_filetime(FILE* fp);
 int ingest_gzip_header(gzFile fp);
 gzFile gzopen(const char *in, const char *mode);
@@ -86,6 +87,18 @@ int is_gz(FILE* fp)
 			gzip = 2; // bgzf format, need to require the normal gzip header
 	fseek(fp, 0, SEEK_SET);
 	return gzip;
+}
+
+int is_plain(FILE* fp)
+{
+	int r = 0;
+	if(!feof(fp))
+	{
+		int c = getc(fp);
+		r = isprint(c);
+		ungetc(c, fp);
+	}
+	return r;
 }
 
 uint32_t get_posix_filetime(FILE* fp)
@@ -178,7 +191,7 @@ gzFile gzdopen(int fd, const char *mode)
 	}
 	fp->mode = strdup(mode);
 	// plain file
-	if(*mode == 'r' && (fp->is_plain = !is_gz(fp->fp)))
+	if(*mode == 'r' && (fp->is_plain = is_plain(fp->fp)))
 		return fp;
 	// gz file
 	fp->gzip_header = (struct isal_gzip_header *)calloc(1, sizeof(struct isal_gzip_header));
