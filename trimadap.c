@@ -147,6 +147,7 @@ void ta_opt_default_adaps(ta_opt_t *opt)
 	// DNBSEQ
 	ta_opt_add_adap(opt, 5, "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG");
 	ta_opt_add_adap(opt, 3, "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA");
+	ta_opt_add_adap(opt, 3, "GAACGACATGGCTACGATCCGACTT");
 }
 
 void ta_opt_open(ta_opt_t *opt, const char *fn)
