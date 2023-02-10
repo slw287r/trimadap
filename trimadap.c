@@ -221,6 +221,8 @@ void ta_trim1(ta_opt_t *opt, char *seq)
 		double diff;
 		int type;
 		ta_adap_t *p = &opt->adaps[j];
+		if (str->l < p->len)
+			continue;
 		r = ksw_align(p->len, p->seq, str->l, (uint8_t*)str->s, 5, opt->mat, opt->go, opt->ge, KSW_XBYTE|KSW_XSTART|(opt->min_len * opt->sa), 0);
 		++r.te; ++r.qe; // change to 0-based
 		k = r.qe - r.qb < r.te - r.tb? r.qe - r.qb : r.te - r.tb;
