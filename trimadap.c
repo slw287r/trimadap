@@ -144,10 +144,11 @@ void ta_opt_default_adaps(ta_opt_t *opt)
 	ta_opt_add_adap(opt, 3, "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC");
 	ta_opt_add_adap(opt, 3, "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT");
 	ta_opt_add_adap(opt, 3, "ATCTCGTATGCCGTCTTCTGCTTG");
-	// DNBSEQ
-	ta_opt_add_adap(opt, 5, "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG");
-	ta_opt_add_adap(opt, 3, "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA");
-	ta_opt_add_adap(opt, 3, "GAACGACATGGCTACGATCCGACTT");
+	// MGI
+	ta_opt_add_adap(opt, 5, "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"); // DNBSEQ
+	ta_opt_add_adap(opt, 3, "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA"); // DNBSEQ
+	ta_opt_add_adap(opt, 5, "AGTCGGAGGCCAAGCGGTCTTAGGAAGAC"); // G99
+	ta_opt_add_adap(opt, 3, "GAACGACATGGCTACGATCCGACTT"); // G99
 }
 
 void ta_opt_open(ta_opt_t *opt, const char *fn)
