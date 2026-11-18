@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 	int c, i, j;
 	ta_opt_t opt;
 	ta_opt_init(&opt);
-	while ((c = getopt(argc, argv, "5:3:s:p:l:t:r:m:n:k:z:qvh")) >= 0) {
+	while ((c = getopt(argc, argv, "5:3:s:d:l:p:t:r:m:n:k:z:qvh")) >= 0) {
 		if (c == 'h') goto usage;
 		else if (c == '5' || c == '3') ta_opt_add_adap(&opt, c - '0', optarg);
 		else if (c == 's') opt.min_sc = atoi(optarg);
@@ -432,8 +432,8 @@ int main(int argc, char *argv[])
 		else if (c == 'm') opt.mskr = *optarg;
 		else if (c == 'n') opt.sl = atoi(optarg);
 		else if (c == 'k') opt.kn = atoi(optarg);
-		else if (c == 'q') opt.qc = 1;
 		else if (c == 'z') opt.max_dnr = atof(optarg);
+		else if (c == 'q') opt.qc = 1;
 		else if (c == 'v') {
 			puts(VERSION);
 			return 0;
