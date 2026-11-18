@@ -342,7 +342,7 @@ double max_dn(const char *seq, int l_seq)
 	double mdn = 0;
 	int i, j, bases[16] = {0};
 	for (i = 0; i < l_seq; ++i)
-		++bases[*(seq + i)];
+		++bases[seq_nt16_table[*(seq + i)]];
 	for (i = 0; i < 4; ++i)
 	{
 		for (j = 0; j < 4; ++j)
